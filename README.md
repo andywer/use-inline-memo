@@ -1,12 +1,17 @@
-# use-inline-memo
+<h1 align="center">⚛︎ use-inline-memo</h1>
 
-React hook for memoizing values inline at any place in a component.
+<p align="center">
+  <b>React hook for memoizing values inline at any place in a component.</b>
+</p>
 
-Like other hooks, you can call [`React.useMemo()`](https://reactjs.org/docs/hooks-reference.html#usememo) and [`React.useCallback()`](https://reactjs.org/docs/hooks-reference.html#usecallback) only at the top of your component function and not use them conditionally. Let's fix that!
+<br />
+
+Like other hooks, you can call [`React.useMemo()`](https://reactjs.org/docs/hooks-reference.html#usememo) and [`React.useCallback()`](https://reactjs.org/docs/hooks-reference.html#usecallback) only at the top of your component function and not use them conditionally.
+
+Let's fix that!
 
 ```jsx
-import Button from "@material-ui/core/Button"
-import TextField from "@material-ui/core/TextField"
+import { Button, TextField } from "@material-ui/core"
 import React from "react"
 import useInlineMemo from "use-inline-memo"
 
@@ -43,16 +48,31 @@ npm install use-inline-memo
 
 Inline memoizers are perfect to define simple one-line callbacks in-place in the JSX without sacrificing performance.
 
-```diff
-+ const memo = useInlineMemo()
-- const onUserInput = React.useCallback(
--   (event: React.SyntheticEvent) => setValue(event.target.value),
--   []
-- )
-  return (
-+   <input onChange={memo(event => setValue(event.target.value), [])} value={value} />
--   <input onChange={onUserInput} value={value} />
+```jsx
+// Before
+function Component() {
+  const [value, setValue] = React.useState("")
+  const onUserInput = React.useCallback(
+    (event: React.SyntheticEvent) => setValue(event.target.value),
+    []
   )
+  return (
+    <input onChange={onUserInput} value={value} />
+  )
+}
+```
+
+```jsx
+// After
+function Component() {
+  const [value, setValue] = React.useState("")
+  return (
+    <input
+      onChange={memo(event => setValue(event.target.value), [])}
+      value={value}
+    />
+  )
+}
 ```
 
 ### `style` props
@@ -61,12 +81,27 @@ Using inline style props is oftentimes an express ticket to unnecessary re-rende
 
 This can now be fixed easily.
 
-```diff
-+ const memo = useInlineMemo()
+```jsx
+// Before
+function Component() {
   return (
-+   <Button style={memo({ color: "red" }, [])} type="submit">Delete</Button>
--   <Button style={{ color: "red" }} type="submit">Delete</Button>
+    <Button style={{ color: "red" }} type="submit">
+      Delete
+    </Button>
   )
+}
+```
+
+```jsx
+// After
+function Component() {
+  const memo = useInlineMemo()
+  return (
+    <Button style={memo({ color: "red" }, [])} type="submit">
+      Delete
+    </Button>
+  )
+}
 ```
 
 ## API
