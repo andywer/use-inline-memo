@@ -24,7 +24,8 @@
   },
   "files": [
     "dist/**",
-    "index.js"
+    "*.d.ts",
+    "*.js"
   ],
   "ava": {
     "compileEnhancements": false,
