@@ -1,0 +1,69 @@
+{
+  "name": "use-inline-memo",
+  "version": "0.0.0",
+  "license": "MIT",
+  "description": "React hook for memoizing values inline in JSX.",
+  "author": "Andy Wermke (https://github.com/andywer)",
+  "repository": "github:andywer/use-inline-memos",
+  "scripts": {
+    "build": "tsc",
+    "test": "ava",
+    "posttest": "tslint --project .",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "react",
+    "hook",
+    "memo",
+    "callback"
+  ],
+  "peerDependencies": {
+    "react": ">= 16.7"
+  },
+  "files": [
+    "dist/**",
+    "index.js"
+  ],
+  "ava": {
+    "compileEnhancements": false,
+    "extensions": [
+      "ts",
+      "tsx"
+    ],
+    "files": [
+      "./test/*.test.ts",
+      "./test/*.test.tsx"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "serial": true
+  },
+  "prettier": {
+    "semi": false,
+    "printWidth": 100
+  },
+  "lint-staged": {
+    "*": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "devDependencies": {
+    "@types/jsdom": "^12.2.4",
+    "@types/react-dom": "^16.8.5",
+    "ava": "^1.4.1",
+    "jsdom": "^15.1.1",
+    "lint-staged": "^9.2.1",
+    "prettier": "^1.18.2",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "ts-node": "^8.3.0",
+    "tslint": "^5.18.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.5.3"
+  },
+  "dependencies": {
+    "@types/react": "^16.9.1"
+  }
+}

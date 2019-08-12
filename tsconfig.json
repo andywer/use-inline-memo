@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "target": "es5",
+    "module": "commonjs",
+    "jsx": "react",
+    "lib": ["es5"],
+    "outDir": "dist",
+    "declaration": true,
+    "strict": true
+  },
+  "include": [
+    "./src/index.ts"
+  ]
+}
