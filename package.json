@@ -15,7 +15,9 @@
     "react",
     "hook",
     "memo",
-    "callback"
+    "callback",
+    "listener",
+    "styles"
   ],
   "peerDependencies": {
     "react": ">= 16.7"

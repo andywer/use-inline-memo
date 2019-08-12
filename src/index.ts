@@ -18,7 +18,7 @@ function doSelectorsMatch(expected: any[], actual: any[]) {
 export default function useInlineMemo() {
   const memos = React.useMemo(() => new Map<string, [any[], any]>(), [])
 
-  return function memo<T>(value: T, selectors: any[]) {
+  return function memo<T>(value: T, selectors: any[]): T {
     // Quick & dirty way to match the memo() call to previous calls
     const callerID = (new Error("-")).stack!.split("\n")[1]
     const prevMemoItem = memos.get(callerID)
