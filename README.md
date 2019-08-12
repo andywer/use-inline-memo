@@ -70,6 +70,7 @@ function Component() {
 ```jsx
 // After
 function Component() {
+  const memo = useInlineMemo()
   const [value, setValue] = React.useState("")
   return (
     <input
