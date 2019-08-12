@@ -1,7 +1,12 @@
 <h1 align="center">⚛︎ use-inline-memo</h1>
 
 <p align="center">
-  <b>React hook for memoizing values inline at any place in a component.</b>
+  <b>React hook for memoizing values inline anywhere in a component.</b>
+</p>
+
+<p align="center">
+  <a href="https://travis-ci.org/andywer/use-inline-memo"><img alt="Build status" src="https://travis-ci.org/andywer/use-inline-memo.svg?branch=master" /></a>
+  <a href="https://www.npmjs.com/package/use-inline-memo"><img alt="npm version" src="https://img.shields.io/npm/v/use-inline-memo.svg" /></a>
 </p>
 
 <br />
