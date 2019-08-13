@@ -13,7 +13,7 @@
 
 Like other hooks, you can call [`React.useMemo()`](https://reactjs.org/docs/hooks-reference.html#usememo) and [`React.useCallback()`](https://reactjs.org/docs/hooks-reference.html#usecallback) only at the top of your component function and not use them conditionally.
 
-Let's fix that!
+Inline memos let us memoize anywhere without the restrictions that apply to the usage of hooks!
 
 ```jsx
 import { Button, TextField } from "@material-ui/core"
@@ -23,6 +23,12 @@ import useInlineMemo from "use-inline-memo"
 function NameForm(props) {
   const memo = useInlineMemo()
   const [newName, setNewName] = React.useState(props.prevName)
+
+  // Conditional return prevents calling any hook after this line
+  if (props.disabled) {
+    return <div>(Disabled)</div>
+  }
+
   return (
     <React.Fragment>
       <TextField
@@ -81,11 +87,9 @@ function Component() {
 }
 ```
 
-### `style` props
+### `style` props & other objects
 
 Using inline style props is oftentimes an express ticket to unnecessary re-renderings as you will create a new style object on each rendering, even though its content will in many cases never change.
-
-This can now be fixed easily.
 
 ```jsx
 // Before
@@ -109,6 +113,10 @@ function Component() {
   )
 }
 ```
+
+You don't need to memoize every style object of every single DOM element, though. Use it whenever you pass an object to a complex component which is expensive to re-render.
+
+For more background information check out [FAQs: Why memoize objects?](#faqs).
 
 ## API
 
@@ -135,9 +143,19 @@ We obtain the call site in a lean and fast way. We create a new `Error` instance
 <details>
 <summary>Why is memoization so important?</summary>
 
-To ensure good performance you want to re-render as components as possible if some application state changes. In React we use `React.memo()` for that which judges by comparing the current component props to the props of the previous rendering.
+To ensure good performance you want to re-render as few components as possible if some application state changes. In React we use `React.memo()` for that which judges by comparing the current component props to the props of the previous rendering.
 
-Without memoization we will very often create the same objects, callbacks, ... with the same content over and over again for each rendering, but as new instantiations, which will not be recognized as the same props and cause unnecessary re-renderings.
+Without memoization we will very often create the same objects, callbacks, ... with the same content over and over again for each rendering, but as they are new instances every time, they will not be recognized as the same values and cause unnecessary re-renderings (see "Why memoize objects?" below).
+</details>
+
+<details>
+<summary>Why memoize objects?</summary>
+
+When `React.memo()` determines whether a component needs to be re-rendered, it tests if the property values are equivalent to the property values of the last rendering. It does though by comparing them for equality by reference, as anything else would take too much time.
+
+Now if the parent component creates a new object and passes it to the component as a property, React will only check if the object is exactly the same object instance as for the last rendering (`newObject === prevObject`). Even if the object has exactly the same properties as before, with the exact same values, it will nevertheless be a new object that just happens to have the same content.
+
+Without memoization `React.memo()` will always re-render the component as we keep passing new object instances – the equality comparison of the old and the new property value will never be true. Memoization makes sure to re-use the actual last object instance, thus skipping re-rendering.
 </details>
 
 ## License
