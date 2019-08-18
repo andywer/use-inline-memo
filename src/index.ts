@@ -15,12 +15,14 @@ function doSelectorsMatch(expected: any[], actual: any[]) {
   return true
 }
 
+const createMap = () => new Map<number, [any[], any]>()
+
 export default function useInlineMemo() {
-  const memos = React.useMemo(() => new Map<string, [any[], any]>(), [])
+  let callerCounter = 1
+  const memos = React.useMemo(createMap, [])
 
   return function memo<T>(value: T, selectors: any[]): T {
-    // Quick & dirty way to match the memo() call to previous calls
-    const callerID = (new Error("-")).stack!.split("\n")[1]
+    const callerID = callerCounter++
     const prevMemoItem = memos.get(callerID)
 
     if (!prevMemoItem && !selectors) {
