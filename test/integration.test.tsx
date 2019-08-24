@@ -4,6 +4,20 @@ import useInlineMemo from "../src/index"
 import render from "./_helpers/render"
 import RenderCounter from "./_helpers/RenderCounter"
 
+const benchmarkMessages: string[] = []
+
+function benchmark<Props>(label: string, Component: React.FunctionComponent<Props>) {
+  return (props: Props) => {
+    const startTime = process.hrtime.bigint()
+    const rendered = Component(props)
+    const measuredTime = process.hrtime.bigint() - startTime
+    benchmarkMessages.push(`${label} rendering took ${(Number(measuredTime) / 1e6).toFixed(3)}ms`)
+    return rendered
+  }
+}
+
+test.after(() => benchmarkMessages.forEach(message => console.log(message)))
+
 test("can memo inline styles", async t => {
   const counter = { count: 0 }
 
@@ -14,12 +28,12 @@ test("can memo inline styles", async t => {
       </RenderCounter>
     )
   })
-  const StylingComponent = React.memo((props: { color: string }) => {
+  const StylingComponent = React.memo(benchmark(t.title, (props: { color: string }) => {
     const memo = useInlineMemo()
     return (
       <StyledComponent style={memo.style({ color: props.color }, [props.color])} />
     )
-  })
+  }))
 
   await render(["red", "red", "green", "red", "green"], color => (
     <StylingComponent color={color} />
@@ -38,12 +52,12 @@ test("can memo inline styles with explicit memo identifiers", async t => {
       </RenderCounter>
     )
   })
-  const StylingComponent = React.memo((props: { color: string }) => {
+  const StylingComponent = React.memo(benchmark(t.title, (props: { color: string }) => {
     const memo = useInlineMemo("style")
     return (
       <StyledComponent style={memo.style({ color: props.color }, [props.color])} />
     )
-  })
+  }))
 
   await render(["red", "red", "green", "red", "green"], color => (
     <StylingComponent color={color} />
@@ -62,14 +76,14 @@ test("can memo event listeners", async t => {
       </RenderCounter>
     )
   })
-  const Sample = () => {
+  const Sample = benchmark(t.title, () => {
     const memo = useInlineMemo()
     return (
       <Button onClick={memo.click(() => window.alert("Clicked!"), [])}>
         Click me
       </Button>
     )
-  }
+  })
 
   await render([1, 2, 3], () => (
     <Sample />
