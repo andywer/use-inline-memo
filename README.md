@@ -1,7 +1,7 @@
 <h1 align="center">⚛︎ use-inline-memo</h1>
 
 <p align="center">
-  <b>React hook for memoizing values inline anywhere in a component.</b>
+  <b>React hook for memoizing values and callbacks anywhere in a component.</b>
 </p>
 
 <p align="center">
@@ -33,12 +33,12 @@ function NameForm(props) {
     <React.Fragment>
       <TextField
         label="Name"
-        onChange={memo(event => setNewName(event.target.value), [])}
+        onChange={memo.nameChange(event => setNewName(event.target.value), [])}
         value={newName}
       />
       <Button
-        onClick={memo(() => props.onSubmit(newName), [newName])}
-        style={memo({ margin: "16px auto 0" }, [])}
+        onClick={memo.submitClick(() => props.onSubmit(newName), [newName])}
+        style={memo.submitStyle({ margin: "16px auto 0" }, [])}
       >
         Submit
       </Button>
@@ -52,6 +52,38 @@ function NameForm(props) {
 ```
 npm install use-inline-memo
 ```
+
+## Usage
+
+Everytime you want to memoize a value, call `memo.X()` with an identifier `X` of your choice. This identifier will be used to map the current call to values memoized in previous component renderings.
+
+Calling `useInlineMemo()` without arguments should work in all ES2015+ runtimes as it requires the ES2015 `Proxy`. If you need to support older browsers like the Internet Explorer, you will have to state the memoization keys up-front:
+
+```jsx
+function NameForm(props) {
+  // Explicit keys to make it work in IE11
+  const memo = useInlineMemo("nameChange", "submitClick", "submitStyle")
+  const [newName, setNewName] = React.useState(props.prevName)
+
+  return (
+    <React.Fragment>
+      <TextField
+        label="Name"
+        onChange={memo.nameChange(event => setNewName(event.target.value), [])}
+        value={newName}
+      />
+      <Button
+        onClick={memo.submitClick(() => props.onSubmit(newName), [newName])}
+        style={memo.submitStyle({ margin: "16px auto 0" }, [])}
+      >
+        Submit
+      </Button>
+    </React.Fragment>
+  )
+}
+```
+
+When not run in production, there is also a check in place to prevent you from accidentally using the same identifier for two different values. Calling `memo.X()` with the same `X` twice during one rendering will lead to an error.
 
 ## Use cases
 
@@ -80,7 +112,7 @@ function Component() {
   const [value, setValue] = React.useState("")
   return (
     <input
-      onChange={memo(event => setValue(event.target.value), [])}
+      onChange={memo.textChange(event => setValue(event.target.value), [])}
       value={value}
     />
   )
@@ -107,7 +139,7 @@ function Component() {
 function Component() {
   const memo = useInlineMemo()
   return (
-    <Button style={memo({ color: "red" }, [])} type="submit">
+    <Button style={memo.buttonStyle({ color: "red" }, [])} type="submit">
       Delete
     </Button>
   )
@@ -122,11 +154,17 @@ For more background information check out [FAQs: Why memoize objects?](#faqs).
 
 #### `useInlineMemo(): MemoFunction`
 
-Call it once in a component to obtain the `memo()` function.
+Call it once in a component to obtain the `memo` object carrying the memoization functions.
 
-#### `memo(value: T, deps: any[]): T`
+#### `useInlineMemo(...keys: string[]): MemoFunction`
+
+State the memoization keys explicitly if you need to support Internet Explorer where `Proxy` is not available.
+
+#### `memo[id: string](value: T, deps: any[]): T`
 
 Works the same as a call to `React.useMemo()` or `React.useCallback()`, only without the wrapping callback function. That wrapping function is useful to run expensive instantiations only if we actually refresh the value, but for our use case this is rather unlikely, so we provide you with a more convenient API instead.
+
+`id` is used to map different memoization calls between component renderings.
 
 ## FAQs
 
@@ -135,9 +173,7 @@ Works the same as a call to `React.useMemo()` or `React.useCallback()`, only wit
 
 The reason why React hooks cannot be called arbitrarily is that React needs to match the current hook call to previous calls. The only way it can match them is by assuming that the same hooks will always be called in the same order.
 
-So what we do here is to provide a hook `useInlineMemo()` that creates a `Map` to match `memo()` calls to the memoized value and the deps array. We can match calls to `memo()`, even conditional calls, between different re-renderings by using the call site (the location where `memo()` was called) as an identifier.
-
-We obtain the call site in a lean and fast way. We create a new `Error` instance to get a stack trace, then we take the second-to-top location from the stack trace.
+So what we do here is to provide a hook `useInlineMemo()` that creates a `Map` to match `memo.X()` calls to the memoized value and the deps array. We can match calls to `memo.X()` between different re-renderings by using `X` as an identifier.
 </details>
 
 <details>
