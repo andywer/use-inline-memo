@@ -91,3 +91,19 @@ test("can memo event listeners", async t => {
 
   t.is(counter.count, 1, "Should render 1x, not 3x as without memo()-ing.")
 })
+
+test("fails if same memoizer function is called twice", async t => {
+  const Sample = () => {
+    const memo = useInlineMemo()
+    return (
+      <div>
+        <div style={memo.style({}, [])} />
+        <div style={memo.style({}, [])} />
+      </div>
+    )
+  }
+
+  await t.throwsAsync(render([1, 2, 3], () => (
+    <Sample />
+  )))
+})

@@ -1,9 +1,14 @@
 import * as React from "react"
 
+const $calls = Symbol("calls")
+const inProduction = typeof process !== "undefined" && process.env && process.env.NODE_ENV === "production"
+
 type MemoFunction = <T>(value: T, deps: any[]) => T
 
 type MapToMemoizers<Key extends string> = {
   [key in Key]: MemoFunction
+} & {
+  [$calls]: Set<Key>
 }
 
 function doSelectorsMatch(expected: any[], actual: any[]) {
@@ -21,8 +26,13 @@ function doSelectorsMatch(expected: any[], actual: any[]) {
   return true
 }
 
-function createMemoizerFunction(callerID: string, memoized: Map<string, [any[], any]>) {
+function createMemoizerFunction(
+  callerID: string,
+  memoized: Map<string, [any[], any]>,
+  getCalls: () => Set<string>
+) {
   return function memo<T>(value: T, selectors: any[]): T {
+    const calls = getCalls()
     const prevMemoItem = memoized.get(callerID)
 
     if (!prevMemoItem && !selectors) {
@@ -31,11 +41,20 @@ function createMemoizerFunction(callerID: string, memoized: Map<string, [any[], 
     if (!prevMemoItem && !Array.isArray(selectors)) {
       throw Error("Memo selectors must be an array.")
     }
+    if (!inProduction && calls.has(callerID)) {
+      throw Error(
+        `Inline memoizer memo.${callerID}() called twice during one render. ` +
+        `This is usually a mistake, probably caused by copy & paste.`
+      )
+    }
 
     const needToUpdate = !prevMemoItem || !doSelectorsMatch(prevMemoItem[0], selectors)
 
     if (needToUpdate) {
       memoized.set(callerID, [selectors, value])
+    }
+    if (!inProduction) {
+      calls.add(callerID)
     }
 
     return prevMemoItem ? prevMemoItem[1] : value
@@ -47,9 +66,10 @@ function createMemoObjectWithKeys<Key extends string>(
   memoized: Map<Key, [any[], any]>
 ): MapToMemoizers<Key> {
   const memo = {} as MapToMemoizers<Key>
+  const getCalls = () => memo[$calls]
 
   for (const identifier of identifiers) {
-    memo[identifier] = createMemoizerFunction(identifier as string, memoized as Map<string, any>)
+    memo[identifier] = createMemoizerFunction(identifier, memoized, getCalls) as any
   }
 
   return memo
@@ -66,7 +86,10 @@ function createMemoProxyObject<Key extends string>(
     )
   }
 
-  return new Proxy({} as MapToMemoizers<Key>, {
+  const memo = {} as MapToMemoizers<Key>
+  const getCalls = () => memo[$calls]
+
+  return new Proxy(memo, {
     get(target, property) {
       const identifier = property as Key
       const initializedProp = target[identifier]
@@ -74,8 +97,8 @@ function createMemoProxyObject<Key extends string>(
       if (initializedProp) {
         return initializedProp
       } else {
-        const memoizer = createMemoizerFunction(identifier, memoized)
-        target[identifier] = memoizer
+        const memoizer = createMemoizerFunction(identifier, memoized, getCalls)
+        target[identifier] = memoizer as any
         return memoizer
       }
     }
@@ -85,14 +108,18 @@ function createMemoProxyObject<Key extends string>(
 export default function useInlineMemo<Key extends string>(): MapToMemoizers<Key>
 export default function useInlineMemo<Key extends string>(...identifiers: Key[]): MapToMemoizers<Key>
 export default function useInlineMemo<Key extends string>(...identifiers: Key[]): MapToMemoizers<Key> {
-  const memoObjectRef = React.useRef<MapToMemoizers<Key> | null>(null)
-  const memoized = React.useMemo(() => new Map<string, [any[], any]>(), [])
+  const memoized = React.useMemo(() => new Map<Key, [any[], any]>(), [])
 
-  if (!memoObjectRef.current && identifiers.length > 0) {
-    memoObjectRef.current = createMemoObjectWithKeys(identifiers, memoized)
-  } else if (!memoObjectRef.current) {
-    memoObjectRef.current = createMemoProxyObject(memoized)
-  }
+  const memoObject = React.useMemo(() => {
+    if (identifiers.length > 0) {
+      return createMemoObjectWithKeys(identifiers, memoized)
+    } else {
+      return createMemoProxyObject(memoized)
+    }
+  }, [])
 
-  return memoObjectRef.current
+  // Re-init the calls every time useInlineMemo() is called
+  memoObject[$calls] = new Set()
+
+  return memoObject
 }
