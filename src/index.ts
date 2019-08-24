@@ -1,5 +1,11 @@
 import * as React from "react"
 
+type MemoFunction = <T>(value: T, deps: any[]) => T
+
+type MapToMemoizers<Key extends string> = {
+  [key in Key]: MemoFunction
+}
+
 function doSelectorsMatch(expected: any[], actual: any[]) {
   if (expected.length !== actual.length) {
     // tslint:disable-next-line no-console
@@ -15,13 +21,9 @@ function doSelectorsMatch(expected: any[], actual: any[]) {
   return true
 }
 
-export default function useInlineMemo() {
-  const memos = React.useMemo(() => new Map<string, [any[], any]>(), [])
-
+function createMemoizerFunction(callerID: string, memoized: Map<string, [any[], any]>) {
   return function memo<T>(value: T, selectors: any[]): T {
-    // Quick & dirty way to match the memo() call to previous calls
-    const callerID = (new Error("-")).stack!.split("\n")[1]
-    const prevMemoItem = memos.get(callerID)
+    const prevMemoItem = memoized.get(callerID)
 
     if (!prevMemoItem && !selectors) {
       throw Error("No memo selectors passed. Pass selectors as 2nd argument.")
@@ -33,8 +35,64 @@ export default function useInlineMemo() {
     const needToUpdate = !prevMemoItem || !doSelectorsMatch(prevMemoItem[0], selectors)
 
     if (needToUpdate) {
-      memos.set(callerID, [selectors, value])
+      memoized.set(callerID, [selectors, value])
     }
+
     return prevMemoItem ? prevMemoItem[1] : value
   }
+}
+
+function createMemoObjectWithKeys<Key extends string>(
+  identifiers: Key[],
+  memoized: Map<Key, [any[], any]>
+): MapToMemoizers<Key> {
+  const memo = {} as MapToMemoizers<Key>
+
+  for (const identifier of identifiers) {
+    memo[identifier] = createMemoizerFunction(identifier as string, memoized as Map<string, any>)
+  }
+
+  return memo
+}
+
+function createMemoProxyObject<Key extends string>(
+  memoized: Map<Key, [any[], any]>
+): MapToMemoizers<Key> {
+  if (typeof Proxy === "undefined") {
+    throw Error(
+      "The JavaScript runtime does not support ES2015 Proxy objects.\n" +
+      "Please call the hook with explicit property keys, like this:\n" +
+      "  useInlineMemo(\"key1\", \"key2\")"
+    )
+  }
+
+  return new Proxy({} as MapToMemoizers<Key>, {
+    get(target, property) {
+      const identifier = property as Key
+      const initializedProp = target[identifier]
+
+      if (initializedProp) {
+        return initializedProp
+      } else {
+        const memoizer = createMemoizerFunction(identifier, memoized)
+        target[identifier] = memoizer
+        return memoizer
+      }
+    }
+  })
+}
+
+export default function useInlineMemo<Key extends string>(): MapToMemoizers<Key>
+export default function useInlineMemo<Key extends string>(...identifiers: Key[]): MapToMemoizers<Key>
+export default function useInlineMemo<Key extends string>(...identifiers: Key[]): MapToMemoizers<Key> {
+  const memoObjectRef = React.useRef<MapToMemoizers<Key> | null>(null)
+  const memoized = React.useMemo(() => new Map<string, [any[], any]>(), [])
+
+  if (!memoObjectRef.current && identifiers.length > 0) {
+    memoObjectRef.current = createMemoObjectWithKeys(identifiers, memoized)
+  } else if (!memoObjectRef.current) {
+    memoObjectRef.current = createMemoProxyObject(memoized)
+  }
+
+  return memoObjectRef.current
 }

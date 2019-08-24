@@ -13,10 +13,12 @@
       true,
       "dev"
     ],
+    "no-object-literal-type-assertion": false,
     "no-submodule-imports": false,
     "object-literal-sort-keys": false,
     "only-arrow-functions": false,
-    "semicolon": false
+    "semicolon": false,
+    "unified-signatures": false
   },
   "rulesDirectory": []
 }

@@ -17,7 +17,31 @@ test("can memo inline styles", async t => {
   const StylingComponent = React.memo((props: { color: string }) => {
     const memo = useInlineMemo()
     return (
-      <StyledComponent style={memo({ color: props.color }, [props.color])} />
+      <StyledComponent style={memo.style({ color: props.color }, [props.color])} />
+    )
+  })
+
+  await render(["red", "red", "green", "red", "green"], color => (
+    <StylingComponent color={color} />
+  ))
+
+  t.is(counter.count, 3, "Should render 3x, not 5x as without memo()-ing.")
+})
+
+test("can memo inline styles with explicit memo identifiers", async t => {
+  const counter = { count: 0 }
+
+  const StyledComponent = React.memo((props: { style: React.CSSProperties }) => {
+    return (
+      <RenderCounter counter={counter}>
+        <div style={props.style}></div>
+      </RenderCounter>
+    )
+  })
+  const StylingComponent = React.memo((props: { color: string }) => {
+    const memo = useInlineMemo("style")
+    return (
+      <StyledComponent style={memo.style({ color: props.color }, [props.color])} />
     )
   })
 
@@ -41,7 +65,7 @@ test("can memo event listeners", async t => {
   const Sample = () => {
     const memo = useInlineMemo()
     return (
-      <Button onClick={memo(() => window.alert("Clicked!"), [])}>
+      <Button onClick={memo.click(() => window.alert("Clicked!"), [])}>
         Click me
       </Button>
     )
