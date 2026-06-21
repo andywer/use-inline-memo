@@ -55,9 +55,9 @@
   "devDependencies": {
     "@types/jsdom": "^12.2.4",
     "@types/react-dom": "^16.8.5",
-    "ava": "^5.1.0",
+    "ava": "^8.0.1",
     "jsdom": "^16.5.0",
-    "lint-staged": "^9.2.1",
+    "lint-staged": "^17.0.8",
     "prettier": "^1.18.2",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
